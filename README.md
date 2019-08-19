@@ -88,3 +88,53 @@ Flask的蓝图的作用就是，让每个蓝图相当于项目的子应用，独
 Flask蓝图的注册时静态的，不支持可拔插。即应用运行后，便可以访问所有注册的蓝图。
 
 ### 如何使用蓝图？
+1. 创建蓝图，命名web
+2. 创建蓝图下的视图函数
+3. 在应用中注册蓝图
+
+
+[如何使用蓝图](http://www.bjhee.com/flask-ad6.html)
+
+在鱼书项目中我创建/web目录用来初始化蓝图，并存放与web相关的视图
+```
+app
+....
+   └── web
+       ├── __init__.py
+       └── book.py
+```
+
+1.初始化蓝图
+
+web/__init__.py 初始化蓝图，命名为web
+```
+from flask import Blueprint
+
+web = Blueprint('web', __name__)
+
+from app.web import book
+
+```
+
+2.创建视图，使用web命名url
+
+web/book.py
+```
+from . import web
+
+
+@web.route('/book/search')
+def search():
+    return 'Hello world!'
+```
+
+3.注册蓝图
+
+在app/__init__.py中
+```
+    from app.web import web
+    app.register_blueprint(web
+```
+结果如图
+
+<img src="/images/test.png" width="300" hegiht="313" align=center />
