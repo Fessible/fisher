@@ -1,18 +1,18 @@
 # fisher
 鱼书笔记
 
-### 依赖管理工具pipenv
+## 依赖管理工具pipenv
 >1. 什么是pipenv?
 >2. 为什么要使用pipenv？
 >3. 如何使用pipenv？
 
-#### 什么是pipenv？
+### 什么是pipenv？
 pipenv是Kenneth Reitz在2017年1月发布的Python依赖管理工具，可以看做是pip和virtualenv的组合体，他基于Pipfile的依赖记录方式，而不是requirements.txt的记录方式。
 
-#### 为什么使用pipenv？
+### 为什么使用pipenv？
 pipenv会自动帮你管理虚拟环境和依赖文件，并提供了一系列命令和选项来帮助你实现各种依赖和环境管理相关的操作。总之，它更方便，完善，安全。
 
-#### 如何使用pipenv？
+### 如何使用pipenv？
 
 针对本项目，创建fisher文件夹，进入文件夹后进行如下操作
 
@@ -34,7 +34,7 @@ pipenv install flask
 ```
 
 
-#### pipenv安装速度慢怎么解决？
+### pipenv安装速度慢怎么解决？
 添加镜像，修改pipfile中的url
 ```
 [[source]]
@@ -51,26 +51,26 @@ verify_ssl = true
 python_version = "3.7"
 
 ```
-#### 使用pycharm
+### 使用pycharm
 我们使用pycharm打开项目，根据提示安装pipenv，就完成了环境部署。
 查看terminal，结果如下
 ```
 (fisher) Mac-mini:fisher h$
 ```
 
-### 鱼书项目简介
+## 鱼书项目简介
 >1. 鱼书有什么功能？
 >2. 涉及哪些方面的知识
 
-#### 鱼书有什么功能？
+### 鱼书有什么功能？
 
 <img src="/images/fisher.png" width="500" hegiht="313" align=center />
 
-### 蓝图
+## 蓝图
 >1. 什么是蓝图？
 >2. 如何使用蓝图？
 
-#### 什么是蓝图？
+### 什么是蓝图？
 <img src="/images/blueprint.png" width="500" hegiht="313" align=center />
 
 
@@ -87,4 +87,4 @@ Flask的蓝图的作用就是，让每个蓝图相当于项目的子应用，独
 
 Flask蓝图的注册时静态的，不支持可拔插。即应用运行后，便可以访问所有注册的蓝图。
 
-#### 如何使用蓝图？
+### 如何使用蓝图？
