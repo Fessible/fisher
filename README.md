@@ -66,11 +66,38 @@ python_version = "3.7"
 
 <img src="/images/fisher.png" width="500" hegiht="313" align=center />
 
+目录结构
+```
+├── app
+│   ├── __init__.py 初始化app
+│   ├── forms  表单数据
+│   ├── libs   工具类
+│   ├── models  数据库模型
+│   ├── secure.py  存放机密配置，如数据库信息等
+│   ├── setting.py 存放一般配置
+│   ├── spider  请求API，获取书籍数据，并生成yushuBook类
+│   ├── static  静态资源文件
+│   ├── templates  html模板
+│   ├── view_models  视图对应的json格式
+│   └── web 蓝图和相关的视图
+├── fisher.py 运行app
+
+```
+
+config拆分成两部分
+```
+├── secure.py #存放机密配置，如数据库信息等
+├── setting.py #存放一般配置
+```
+
+
 ## 蓝图
 >1. 什么是蓝图？
 >2. 如何使用蓝图？
 
 ### 什么是蓝图？
+
+[什么是蓝图](https://spacewander.github.io/explore-flask-zh/7-blueprints.html)
 <img src="/images/blueprint.png" width="500" hegiht="313" align=center />
 
 
@@ -138,3 +165,87 @@ def search():
 结果如图
 
 <img src="/images/test.png" width="300" hegiht="313" align=center />
+
+## 数据模型
+
+### 数据库配置
+
+```
+pipenv install flask-sqlalchemy
+pipenv install mysqlclient
+```
+在models文件夹中创建数据库模型
+models/base.py
+```
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+```
+
+<img src="/images/book_data.png" width="400" hegiht="313" align=center />
+
+
+models/book.py
+```
+from sqlalchemy import Column, Integer, String
+from app.models.base import db
+
+
+class Book(db.Model):
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(50), nullable=False)
+    author = Column(String(30), default='未知')
+    # 精装还是平装
+    binding = Column(String(20))
+    publisher = Column(String(50))
+    price = Column(String(20))
+    pages = Column(Integer)
+    pubdate = Column(String(20))
+    isbn = Column(String(15), nullable=False, unique=True)
+    summary = Column(String(1000))
+    image = Column(String(50))
+
+```
+
+
+然后在app/__init__.py中初始化数据库
+```
+from  app.models.base import db
+
+#配置文件
+app.config.from_object('app.secure')
+app.config.from_object('app.setting')
+
+#数据库初始化
+   db.init_app(app)
+   with app.app_context():
+       db.create_all()
+
+```
+
+还要记住在配置中配置数据库信息
+
+security.py
+```
+import os
+
+
+# 数据库密码账号等机密信息，不上传到git上面
+DEBUG = False
+
+# 数据库配置
+
+DIALECT = 'mysql'
+USER = 'root'
+PASSWORD = 'root'
+HOST = '127.0.0.1'
+DATABASE = 'fisher'
+
+SQLALCHEMY_DATABASE_URI = '{}://{}:{}@{}/{}'.format(DIALECT, USER, PASSWORD, HOST, DATABASE)
+
+# SQLALCHEMY_DATABASE_URI = 'mysql://root:root@127.0.0.1/flask_sql_demo'
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# SECRET_KEY = os.urandom(24)
+
+```
