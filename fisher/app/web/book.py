@@ -1,8 +1,8 @@
 from . import web
 from app.forms.book import SearchForm
-from flask import request, flash, jsonify, json
+from flask import request, flash, jsonify, json, render_template
 
-from app.view_models.book import BookCollection
+from app.view_models.book import BookCollection, BookViewModel
 from app.libs.helper import is_isbn_or_key
 from app.spider.yushu_book import YuShuBook
 
@@ -36,7 +36,20 @@ def search():
 
     else:
         flash('搜索的关键字不符合要求，请重新输入关键字')
-        return jsonify(form.errors)
+        # return jsonify(form.errors)
 
     # 由于books是对象，需要将对象转换成json
-    return json.dumps(books, default=lambda o: o.__dict__)
+    # return json.dumps(books, default=lambda o: o.__dict__)
+    return render_template('search_result.html', books=books)
+
+
+# 书籍信息
+@web.route('/book/<isbn>/detail')
+def book_detail(isbn):
+    # 使用isbn进行搜索，然后将数据显示到详情页面
+    yushu_book = YuShuBook()
+    yushu_book.search_by_isbn(isbn)
+    # book = BookViewModel(yushu_book.first())
+    book = BookViewModel(yushu_book.first)
+    return render_template('book_detail.html', book=book, wishes=[], gifts=[])
+

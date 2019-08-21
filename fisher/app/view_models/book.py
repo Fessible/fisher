@@ -35,6 +35,7 @@ class BookViewModel:
         self.isbn = book['isbn']
         self.price = book['price']
 
+    @property
     # 希望输出 author/publisher/price 或者 author/price的格式
     def intro(self):
         intros = filter(lambda x: True if x else False, [self.author, self.publisher, self.price])
