@@ -396,3 +396,265 @@ class HTTP:
         return r.json() if return_json else r.text
 
 ```
+
+## 返回数据格式
+我们需要返回给前端的数据和我们存储的数据格式是不同的，
+所以我们需要给数据做特定地封装，以返回指定的格式。
+
+view_models/book.py
+```
+# 输出格式
+
+class BookViewModel:
+    """
+    {
+    "author": [
+        "蔡智恒"
+    ],
+    "binding": "平装",
+    "category": "小说",
+    "id": 1780,
+    "image": "https://img3.doubanio.com/lpic/s1327750.jpg",
+    "images": {
+        "large": "https://img3.doubanio.com/lpic/s1327750.jpg"
+    },
+    "isbn": "9787501524044",
+    "pages": "224",
+    "price": "12.80",
+    "pubdate": "1999-11-1",
+    "publisher": "知识出版社",
+    "subtitle": "",
+    "summary": "你还没有试过，到大学路的麦当劳，点一杯大可乐，与两份薯条的约会方法吗？那你一定要读目前最抢手的这部网络小说——《第一次的亲密接触》。\\n由于这部小说在网络上一再被转载，使得痞子蔡的知名度像一股热浪在网络上延烧开来，达到无国界之境。作者的电子信箱，每天都收到热情的网友如雪片飞来的信件，痞子蔡与轻舞飞扬已成为网络史上最发烧的网络情人。",
+    "title": "第一次的亲密接触",
+    "translator": []
+}
+    """
+
+    def __init__(self, book):
+        self.title = book['title']
+        self.publisher = book['publisher']
+        self.pages = book['pages'] or ''
+        self.author = '、'.index(book['author'])
+        self.summary = book['summary']
+        self.image = book['image']
+        self.isbn = book['isbn']
+        self.price = book['price']
+```
+
+集合类型的返回格式
+
+```
+
+class BookCollection:
+    """
+     YuShuBook:
+        total,
+        books
+    """
+
+    def __init__(self):
+        self.total = 0
+        self.books = []
+        self.keyword = ''
+
+    def fill(self, data, keyword):
+        self.total = data.total
+        self.keyword = keyword
+        self.books = [BookViewModel(book) for book in data.books]
+
+```
+
+## 请求数据
+
+### 添加form表单验证
+
+```
+pipenv install flask-wtf
+
+```
+```
+from wtforms import StringField, Form, IntegerField
+from wtforms.validators import Length, NumberRange, DataRequired
+
+
+# DataRequired防止传入空字符串
+class SearchForm(Form):
+    """
+    控制请求的关键字，如果q为空在则会返回长度不满足要求
+    page给定默认值
+    """
+
+    q = StringField(validators=[DataRequired(), Length(min=1, max=30, message="长度不满足要求")])
+    page = IntegerField(default=1, validators=[NumberRange(min=1, max=99)])
+
+```
+
+请求方式为
+```
+from . import web
+from app.forms.book import SearchForm
+from flask import request, flash, jsonify
+
+from app.view_models.book import BookViewModel, BookCollection
+from app.libs.helper import is_isbn_or_key
+from app.spider.yushu_book import YuShuBook
+
+
+@web.route('/book/search')
+def search():
+    """
+           q :普通关键字 isbn
+           ?q=金庸&page=1
+    """
+    # 获取请求内容
+    form = SearchForm(request.args)
+    books = BookCollection()
+
+    if form.validate():
+        q = form.q.data.strip()
+        page = form.page.data
+
+    else:
+        return form.errors
+
+    return "hello"
+```
+
+1. 当请求地址为 http://0.0.0.0:5000/book/search?
+
+```
+{
+q: [
+"This field is required."
+]
+}
+```
+2. 当请求地址为 http://0.0.0.0:5000/book/search?q
+
+```
+{
+q: [
+"This field is required."
+]
+}
+
+```
+
+3. 当请求地址为 http://0.0.0.0:5000/book/search?q=9787501524044
+
+```
+
+hello
+```
+
+4. 当请求的地址长度大于100
+
+```
+{
+q: [
+"长度不满足要求"
+]
+}
+```
+
+### 请求代码
+
+1. 验证请求信息是否合法
+2. 判断是否为isbn
+3. 获取请求数据，并封装成需要显示的格式
+
+```
+from . import web
+from app.forms.book import SearchForm
+from flask import request, flash, jsonify, json
+
+from app.view_models.book import BookCollection
+from app.libs.helper import is_isbn_or_key
+from app.spider.yushu_book import YuShuBook
+
+
+@web.route('/book/search')
+def search():
+    """
+           q :普通关键字 isbn
+           ?q=金庸&page=1
+    """
+    # 获取请求内容
+    form = SearchForm(request.args)
+    books = BookCollection()
+
+    if form.validate():
+        q = form.q.data.strip()
+        page = form.page.data
+
+        # 判断是否为isbn
+        isbn_or_key = is_isbn_or_key(q)
+        yushu_book = YuShuBook()
+
+        # 搜索结果，并存储到yushu_book中
+        if isbn_or_key:
+            yushu_book.search_by_isbn(q)
+        else:
+            yushu_book.search_by_key(q, page)
+
+        # 封装数据
+        books.fill(yushu_book, q)
+
+    else:
+        flash('搜索的关键字不符合要求，请重新输入关键字')
+        return jsonify(form.errors)
+
+    # 由于books是对象，需要将对象转换成json
+    return json.dumps(books, default=lambda o: o.__dict__)
+
+```
+
+请求结果显示 http://0.0.0.0:5000/book/search?q=9787501524044
+```
+{
+books: [
+{
+author: "蔡智恒",
+image: "https://img3.doubanio.com/lpic/s1327750.jpg",
+isbn: "9787501524044",
+pages: "224",
+price: "12.80",
+publisher: "知识出版社",
+summary: "你还没有试过，到大学路的麦当劳，点一杯大可乐，与两份薯条的约会方法吗？那你一定要读目前最抢手的这部网络小说——《第一次的亲密接触》。\n由于这部小说在网络上一再被转载，使得痞子蔡的知名度像一股热浪在网络上延烧开来，达到无国界之境。作者的电子信箱，每天都收到热情的网友如雪片飞来的信件，痞子蔡与轻舞飞扬已成为网络史上最发烧的网络情人。",
+title: "第一次的亲密接触"
+}
+],
+keyword: "9787501524044",
+total: 1
+}
+```
+
+请求结果显示 http://0.0.0.0:5000/book/search?q=红楼梦
+
+```
+books: [
+{
+author: "萨孟武",
+image: "https://img1.doubanio.com/lpic/s1418087.jpg",
+isbn: "9787563352890",
+pages: "171",
+price: "16.00元",
+publisher: "广西师范大学出版社",
+summary: "“满纸荒唐言，一把辛酸泪。都云作者痴，谁解其中味”。萨孟武先生以研究社会文化的角度来解读《红楼梦》，引领读者深入贾府的家庭生活，重新认识中国传统家庭，剖示传统社会的文化与伦理格局，演绎社会风气的流转，见解精微，启人心智，是一部别开生面、言近旨远的大家小书。",
+title: "红楼梦与中国旧家庭"
+},
+{
+author: "曹雪芹",
+image: "https://img3.doubanio.com/lpic/s4466175.jpg",
+isbn: "9787508823737",
+pages: "1194",
+price: "120.00元",
+publisher: "龙门书局",
+summary: "《蔡义江新评红楼梦(套装上下册)》由以下几个部分构成：第一，精心校勘的红楼梦原文，正本清源，摒弃各本常见谬误，严谨权威，在学界内此版本被誉为“蔡本”；第二，每回前均有题解，细论回目原貌，探讨回目精义；第三，每回后配有总评，从整体上赏鉴本回内容；第四，作者侧批与红楼梦正文分双栏排版，一一对应，解读精细，抽丝剥茧搬地为读者展现出红楼的艺术价值，评注中还收录了上千条脂批，以飨读者。第五，附编有多篇专题文章，系统化地阐述有关红楼的学术问题，是作者一生的心血凝集；另外《蔡义江新评红楼梦(套装上下册)》还附录了红楼的珍贵资料图片以及红楼梦人物关系图表，堪称红楼梦收藏的最佳版本。\n封面：",
+title: "蔡义江新评红楼梦"
+}
+],
+keyword: "红楼梦",
+total: 34
+}
+```

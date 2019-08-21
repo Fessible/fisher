@@ -2,7 +2,7 @@ import os
 
 
 # 数据库密码账号等机密信息，不上传到git上面
-DEBUG = False
+DEBUG = True
 
 # 数据库配置
 
@@ -17,4 +17,4 @@ SQLALCHEMY_DATABASE_URI = '{}://{}:{}@{}/{}'.format(DIALECT, USER, PASSWORD, HOS
 # SQLALCHEMY_DATABASE_URI = 'mysql://root:root@127.0.0.1/flask_sql_demo'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-# SECRET_KEY = os.urandom(24)
+SECRET_KEY = os.urandom(24)
